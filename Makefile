@@ -5,3 +5,7 @@ build:
 .PHONY: bootstrap
 bootstrap:
 	scripts/bootstrap.sh
+
+.PHONY: run
+run:
+	docker-compose up
