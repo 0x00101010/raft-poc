@@ -3,15 +3,17 @@ package leader
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/signal"
+	"net"
 	"path/filepath"
-	"syscall"
 
 	transport "github.com/Jille/raft-grpc-transport"
+	"github.com/Jille/raftadmin"
+	"github.com/base-org/leader-election/leader/health"
 	"github.com/hashicorp/raft"
 	boltdb "github.com/hashicorp/raft-boltdb"
 	"go.uber.org/atomic"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type Elector struct {
@@ -26,6 +28,8 @@ type Elector struct {
 
 	// TODO: clean up later when we switch off from raft-grpc-transport lib
 	tm *transport.Manager
+
+	monitor health.HealthMonitor
 }
 
 func NewElector(ctx context.Context, cfg *Config) (*Elector, error) {
@@ -33,6 +37,7 @@ func NewElector(ctx context.Context, cfg *Config) (*Elector, error) {
 		config:   cfg,
 		leader:   atomic.NewBool(false),
 		leaderCh: make(chan bool, 1),
+		monitor:  health.NewSimpleHealthMonitor(),
 	}
 
 	if err := e.makeRaft(ctx); err != nil {
@@ -42,12 +47,22 @@ func NewElector(ctx context.Context, cfg *Config) (*Elector, error) {
 	return e, nil
 }
 
-func (e *Elector) Run() {
-	// TODO: implement
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+func (e *Elector) Run(ctx context.Context) {
+	go e.monitorLeadership(ctx)
+	go e.monitorSequencerHealth(ctx)
 
-	<-sigCh
+	s := grpc.NewServer()
+	e.tm.Register(s)
+	raftadmin.Register(s, e.raft)
+	reflection.Register(s)
+
+	sock, err := net.Listen("tcp", e.config.ServerAddr)
+	if err != nil {
+		panic(err)
+	}
+	if err = s.Serve(sock); err != nil {
+		panic(err)
+	}
 }
 
 func (e *Elector) makeRaft(ctx context.Context) error {
@@ -95,4 +110,34 @@ func (e *Elector) makeRaft(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (e *Elector) monitorLeadership(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case state := <-e.leaderCh:
+			fmt.Println("leader election occured", state)
+		}
+	}
+}
+
+func (e *Elector) monitorSequencerHealth(ctx context.Context) {
+	healthUpdate := e.monitor.Subscribe()
+	fmt.Println("Started to monitor sequencer health")
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case healthy := <-healthUpdate:
+			fmt.Println("received health update", healthy)
+			if healthy {
+				continue
+			}
+
+			fmt.Println("sequencer is unhealthy")
+		}
+	}
 }
