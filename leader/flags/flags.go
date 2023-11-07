@@ -11,7 +11,7 @@ var (
 		Name:   "server-addr",
 		Usage:  "The address to bind to",
 		EnvVar: "SERVER_ADDR",
-		Value:  "http://127.0.0.1:50051",
+		Value:  "127.0.0.1:50051",
 	}
 
 	ServerID = &cli.StringFlag{

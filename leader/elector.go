@@ -4,15 +4,19 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"os"
 	"path/filepath"
 
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/Jille/raftadmin"
-	"github.com/base-org/leader-election/leader/health"
+	lh "github.com/base-org/leader-election/leader/health"
 	"github.com/hashicorp/raft"
 	boltdb "github.com/hashicorp/raft-boltdb"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/health"
+	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/reflection"
 )
 
@@ -29,7 +33,7 @@ type Elector struct {
 	// TODO: clean up later when we switch off from raft-grpc-transport lib
 	tm *transport.Manager
 
-	monitor health.HealthMonitor
+	monitor lh.HealthMonitor
 }
 
 func NewElector(ctx context.Context, cfg *Config) (*Elector, error) {
@@ -37,7 +41,7 @@ func NewElector(ctx context.Context, cfg *Config) (*Elector, error) {
 		config:   cfg,
 		leader:   atomic.NewBool(false),
 		leaderCh: make(chan bool, 1),
-		monitor:  health.NewSimpleHealthMonitor(),
+		monitor:  lh.NewSimpleHealthMonitor(),
 	}
 
 	if err := e.makeRaft(ctx); err != nil {
@@ -55,6 +59,8 @@ func (e *Elector) Run(ctx context.Context) {
 	e.tm.Register(s)
 	raftadmin.Register(s, e.raft)
 	reflection.Register(s)
+	hs := health.NewServer()
+	grpc_health_v1.RegisterHealthServer(s, hs)
 
 	sock, err := net.Listen("tcp", e.config.ServerAddr)
 	if err != nil {
@@ -67,6 +73,12 @@ func (e *Elector) Run(ctx context.Context) {
 
 func (e *Elector) makeRaft(ctx context.Context) error {
 	log := e.config.RaftConfig.Logger
+
+	if _, err := os.Stat(e.config.StorageDir); os.IsNotExist(err) {
+		if err := os.Mkdir(e.config.StorageDir, 0755); err != nil {
+			return fmt.Errorf("error creating storage dir: %v", err)
+		}
+	}
 
 	var err error
 	e.logStore, err = boltdb.NewBoltStore(filepath.Join(e.config.StorageDir, "logs.dat"))
@@ -84,7 +96,7 @@ func (e *Elector) makeRaft(ctx context.Context) error {
 		return fmt.Errorf(`raft.NewFileSnapshotStore(%q, ...): %v`, e.config.StorageDir, err)
 	}
 
-	e.tm = transport.New(raft.ServerAddress(e.config.ServerAddr), nil)
+	e.tm = transport.New(raft.ServerAddress(e.config.ServerAddr), []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())})
 	e.transport = e.tm.Transport()
 
 	e.raft, err = raft.NewRaft(e.config.RaftConfig, nil, e.logStore, e.stableStore, e.snapshotStore, e.transport)
