@@ -15,32 +15,33 @@ const (
 	StopSequencerMethod  = "admin_stopSequencer"
 )
 
-type NodeAdmin interface {
+type NodeRPC interface {
 	StartSequencer(hsh common.Hash) error
 	StopSequencer() (common.Hash, error)
+	LatestBlock() (common.Hash, error)
 }
 
-type NodeAdminRPC struct {
+type NodeRPCClient struct {
 	serverAddr string
 	client     *http.Client
 }
 
-var _ NodeAdmin = (*NodeAdminRPC)(nil)
+var _ NodeRPC = (*NodeRPCClient)(nil)
 
-func NewNodeAdmin(serverAddr string) NodeAdmin {
-	return &NodeAdminRPC{
+func NewNodeRPC(serverAddr string) NodeRPC {
+	return &NodeRPCClient{
 		serverAddr: serverAddr,
 		client:     &http.Client{},
 	}
 }
 
 // StartSequencer implements INodeAdmin.
-func (n *NodeAdminRPC) StartSequencer(hsh common.Hash) error {
-	req := rpc.JsonRPCRequest{
+func (n *NodeRPCClient) StartSequencer(hsh common.Hash) error {
+	req := rpc.JSONRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StartSequencerMethod,
 		Params:  []any{hsh.String()},
-		Id:      0,
+		ID:      0,
 	}
 
 	if _, err := rpc.Post(n.client, n.serverAddr, req); err != nil {
@@ -51,12 +52,12 @@ func (n *NodeAdminRPC) StartSequencer(hsh common.Hash) error {
 }
 
 // StopSequencer implements INodeAdmin.
-func (n *NodeAdminRPC) StopSequencer() (common.Hash, error) {
-	req := rpc.JsonRPCRequest{
+func (n *NodeRPCClient) StopSequencer() (common.Hash, error) {
+	req := rpc.JSONRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StopSequencerMethod,
 		Params:  []any{},
-		Id:      0,
+		ID:      0,
 	}
 
 	resp, err := rpc.Post(n.client, n.serverAddr, req)
@@ -77,4 +78,41 @@ func (n *NodeAdminRPC) StopSequencer() (common.Hash, error) {
 	}
 
 	return result, nil
+}
+
+// LatestBlock implements NodeRPC.
+func (n *NodeRPCClient) LatestBlock() (common.Hash, error) {
+	req := rpc.JSONRPCRequest{
+		Version: rpc.DefaultJsonRPCVersion,
+		Method:  "eth_getBlockByNumber",
+		Params:  []any{"latest", true},
+		ID:      0,
+	}
+
+	resp, err := rpc.Post(n.client, n.serverAddr, req)
+	if err != nil {
+		return common.Hash{}, errors.Wrap(err, "failed to send request")
+	}
+
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return common.Hash{}, errors.Wrap(err, "failed to read response body")
+	}
+
+	var result rpc.JSONRPCResponse
+	if err := json.Unmarshal(bytes, &result); err != nil {
+		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
+	}
+
+	blockData, ok := result.Result.([]byte)
+	if !ok {
+		return common.Hash{}, errors.New("failed to convert result to bytes")
+	}
+
+	var block rpc.Block
+	if err := json.Unmarshal(blockData, &block); err != nil {
+		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
+	}
+
+	return common.HexToHash(block.Hash), nil
 }

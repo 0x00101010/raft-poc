@@ -3,6 +3,7 @@ package leader
 import (
 	"context"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"github.com/base-org/leader-election/leader/config"
 	"github.com/base-org/leader-election/leader/control"
 	lh "github.com/base-org/leader-election/leader/health"
+	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/raft"
 	boltdb "github.com/hashicorp/raft-boltdb"
 	"go.uber.org/atomic"
@@ -23,6 +25,7 @@ import (
 )
 
 type Elector struct {
+	log           hclog.Logger
 	config        *config.Config
 	raft          *raft.Raft
 	logStore      raft.LogStore
@@ -35,19 +38,20 @@ type Elector struct {
 	// TODO: clean up later when we switch off from raft-grpc-transport lib
 	tm *transport.Manager
 
-	monitor      lh.HealthMonitor
-	batcherAdmin control.BatcherAdmin
-	nodeAdmin    control.NodeAdmin
+	monitor    lh.HealthMonitor
+	batcherRPC control.BatcherRPC
+	nodeRPC    control.NodeRPC
 }
 
 func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 	e := &Elector{
-		config:       cfg,
-		leader:       atomic.NewBool(false),
-		leaderCh:     make(chan bool, 1),
-		monitor:      lh.NewSimpleHealthMonitor(cfg),
-		batcherAdmin: control.NewBatcherAdmin(cfg.BatcherAddr),
-		nodeAdmin:    control.NewNodeAdmin(cfg.NodeAddr),
+		log:        cfg.RaftConfig.Logger,
+		config:     cfg,
+		leader:     atomic.NewBool(false),
+		leaderCh:   make(chan bool, 1),
+		monitor:    lh.NewSimpleHealthMonitor(cfg),
+		batcherRPC: control.NewBatcherRPC(cfg.BatcherAddr),
+		nodeRPC:    control.NewNodeRPC(cfg.NodeAddr),
 	}
 
 	if err := e.makeRaft(ctx); err != nil {
@@ -70,10 +74,10 @@ func (e *Elector) Run(ctx context.Context) {
 
 	sock, err := net.Listen("tcp", e.config.ServerAddr)
 	if err != nil {
-		panic(err)
+		log.Fatalf("failed to listen: %v", err)
 	}
 	if err = s.Serve(sock); err != nil {
-		panic(err)
+		log.Fatalf("failed to serve: %v", err)
 	}
 }
 
@@ -139,12 +143,16 @@ func (e *Elector) monitorLeadership(ctx context.Context) {
 			fmt.Println("leader election occured", leader)
 			e.leader.Store(leader)
 
+			// TODO: handle error situation
 			if leader {
 				// Start sequencer when changing to leader
-
+				current, _ := e.nodeRPC.LatestBlock()
+				e.nodeRPC.StartSequencer(current)
+				e.batcherRPC.StartBatcher()
 			} else {
 				// Stop sequencer when stepping down from leader
-
+				e.batcherRPC.StopBatcher()
+				e.nodeRPC.StopSequencer()
 			}
 		}
 	}
@@ -164,7 +172,11 @@ func (e *Elector) monitorSequencerHealth(ctx context.Context) {
 				continue
 			}
 
-			fmt.Println("sequencer is unhealthy")
+			// TODO: make it more robust, handle error better
+			fmt.Println("sequencer is unhealthy, trying to transfer leadership to another node")
+			if err := e.raft.LeadershipTransfer().Error(); err != nil {
+				fmt.Println("failed to transfer leadership", err)
+			}
 		}
 	}
 }
