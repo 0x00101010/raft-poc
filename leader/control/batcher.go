@@ -12,27 +12,27 @@ const (
 	StopBatcherMethod  = "admin_stopBatcher"
 )
 
-type IBatcherAdmin interface {
+type BatcherAdmin interface {
 	StartBatcher() error
 	StopBatcher() error
 }
 
-type BatcherAdmin struct {
+type BatcherAdminRPC struct {
 	serverAddr string
 	client     *http.Client
 }
 
-var _ IBatcherAdmin = (*BatcherAdmin)(nil)
+var _ BatcherAdmin = (*BatcherAdminRPC)(nil)
 
-func NewBatcherAdmin(serverAddr string) *BatcherAdmin {
-	return &BatcherAdmin{
+func NewBatcherAdmin(serverAddr string) BatcherAdmin {
+	return &BatcherAdminRPC{
 		serverAddr: serverAddr,
 		client:     &http.Client{},
 	}
 }
 
 // StartBatcher implements IBatcherAdmin.
-func (b *BatcherAdmin) StartBatcher() error {
+func (b *BatcherAdminRPC) StartBatcher() error {
 	req := rpc.JsonRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StartBatcherMethod,
@@ -48,7 +48,7 @@ func (b *BatcherAdmin) StartBatcher() error {
 }
 
 // StopBatcher implements IBatcherAdmin.
-func (b *BatcherAdmin) StopBatcher() error {
+func (b *BatcherAdminRPC) StopBatcher() error {
 	req := rpc.JsonRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StopBatcherMethod,

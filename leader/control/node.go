@@ -1,7 +1,6 @@
 package control
 
 import (
-	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -16,20 +15,27 @@ const (
 	StopSequencerMethod  = "admin_stopSequencer"
 )
 
-type INodeAdmin interface {
+type NodeAdmin interface {
 	StartSequencer(hsh common.Hash) error
 	StopSequencer() (common.Hash, error)
 }
 
-type NodeAdmin struct {
+type NodeAdminRPC struct {
 	serverAddr string
 	client     *http.Client
 }
 
-var _ INodeAdmin = (*NodeAdmin)(nil)
+var _ NodeAdmin = (*NodeAdminRPC)(nil)
+
+func NewNodeAdmin(serverAddr string) NodeAdmin {
+	return &NodeAdminRPC{
+		serverAddr: serverAddr,
+		client:     &http.Client{},
+	}
+}
 
 // StartSequencer implements INodeAdmin.
-func (n *NodeAdmin) StartSequencer(hsh common.Hash) error {
+func (n *NodeAdminRPC) StartSequencer(hsh common.Hash) error {
 	req := rpc.JsonRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StartSequencerMethod,
@@ -37,12 +43,7 @@ func (n *NodeAdmin) StartSequencer(hsh common.Hash) error {
 		Id:      0,
 	}
 
-	data, err := json.Marshal(req)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal json request")
-	}
-
-	if _, err = n.client.Post(n.serverAddr, rpc.ContentTypeApplicationJSON, bytes.NewBuffer(data)); err != nil {
+	if _, err := rpc.Post(n.client, n.serverAddr, req); err != nil {
 		return errors.Wrap(err, "failed to send request")
 	}
 
@@ -50,7 +51,7 @@ func (n *NodeAdmin) StartSequencer(hsh common.Hash) error {
 }
 
 // StopSequencer implements INodeAdmin.
-func (n *NodeAdmin) StopSequencer() (common.Hash, error) {
+func (n *NodeAdminRPC) StopSequencer() (common.Hash, error) {
 	req := rpc.JsonRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StopSequencerMethod,

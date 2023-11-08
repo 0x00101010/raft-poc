@@ -10,6 +10,7 @@ import (
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/Jille/raftadmin"
 	"github.com/base-org/leader-election/leader/config"
+	"github.com/base-org/leader-election/leader/control"
 	lh "github.com/base-org/leader-election/leader/health"
 	"github.com/hashicorp/raft"
 	boltdb "github.com/hashicorp/raft-boltdb"
@@ -34,15 +35,19 @@ type Elector struct {
 	// TODO: clean up later when we switch off from raft-grpc-transport lib
 	tm *transport.Manager
 
-	monitor lh.HealthMonitor
+	monitor      lh.HealthMonitor
+	batcherAdmin control.BatcherAdmin
+	nodeAdmin    control.NodeAdmin
 }
 
 func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 	e := &Elector{
-		config:   cfg,
-		leader:   atomic.NewBool(false),
-		leaderCh: make(chan bool, 1),
-		monitor:  lh.NewSimpleHealthMonitor(cfg),
+		config:       cfg,
+		leader:       atomic.NewBool(false),
+		leaderCh:     make(chan bool, 1),
+		monitor:      lh.NewSimpleHealthMonitor(cfg),
+		batcherAdmin: control.NewBatcherAdmin(cfg.BatcherAddr),
+		nodeAdmin:    control.NewNodeAdmin(cfg.NodeAddr),
 	}
 
 	if err := e.makeRaft(ctx); err != nil {
@@ -136,6 +141,7 @@ func (e *Elector) monitorLeadership(ctx context.Context) {
 
 			if leader {
 				// Start sequencer when changing to leader
+
 			} else {
 				// Stop sequencer when stepping down from leader
 
