@@ -135,8 +135,9 @@ func (e *Elector) monitorLeadership(ctx context.Context) {
 			e.leader.Store(leader)
 
 			if leader {
-
+				// Start sequencer when changing to leader
 			} else {
+				// Stop sequencer when stepping down from leader
 
 			}
 		}
