@@ -1,6 +1,7 @@
 package health
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -79,7 +80,9 @@ func (m *MockHealthMonitor) Subscribe() <-chan bool {
 func (m *MockHealthMonitor) notifyHealth() {
 	for {
 		healthy := true
-		if _, err := os.Stat(m.healthFile); !os.IsNotExist(err) {
+		_, err := os.Stat(m.healthFile)
+		fmt.Println(m.healthFile, err)
+		if err == nil {
 			healthy = false
 		}
 

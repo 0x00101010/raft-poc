@@ -11,12 +11,12 @@ services:
       - data:/raft-cluster
       - /tmp/health/:/raft-cluster/health/
     environment:
-      - SERVER_ADDR=0.0.0.0:50051
+      - SERVER_ADDR=elector1:50051
       - SERVER_ID=NodeA
       - STORAGE_DIR=/raft-cluster
       - BOOTSTRAP=false
       - TEST=true
-      - HealthCheckPath=/raft-cluster/health/NodeA
+      - HEALTH_CHECK_PATH=/raft-cluster/health/NodeA
 
   elector2:
     build:
@@ -28,12 +28,12 @@ services:
       - data:/raft-cluster
       - /tmp/health/:/raft-cluster/health/
     environment:
-      - SERVER_ADDR=0.0.0.0:50052
+      - SERVER_ADDR=elector2:50052
       - SERVER_ID=NodeB
       - STORAGE_DIR=/raft-cluster
       - BOOTSTRAP=false
       - TEST=true
-      - HealthCheckPath=/raft-cluster/health/NodeB
+      - HEALTH_CHECK_PATH=/raft-cluster/health/NodeB
 
   elector3:
     build:
@@ -45,12 +45,12 @@ services:
       - data:/raft-cluster
       - /tmp/health/:/raft-cluster/health/
     environment:
-      - SERVER_ADDR=0.0.0.0:50053
+      - SERVER_ADDR=elector3:50053
       - SERVER_ID=NodeC
       - STORAGE_DIR=/raft-cluster
       - BOOTSTRAP=false
       - TEST=true
-      - HealthCheckPath=/raft-cluster/health/NodeC
+      - HEALTH_CHECK_PATH=/raft-cluster/health/NodeC
 
 volumes:
   data:

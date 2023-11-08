@@ -186,6 +186,10 @@ func (e *Elector) monitorSequencerHealth(ctx context.Context) {
 				continue
 			}
 
+			if !e.leader.Load() {
+				continue
+			}
+
 			// TODO: make it more robust, handle error better
 			fmt.Println("sequencer is unhealthy, trying to transfer leadership to another node")
 			if err := e.raft.LeadershipTransfer().Error(); err != nil {
