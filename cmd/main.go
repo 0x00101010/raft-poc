@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/base-org/leader-election/leader"
+	"github.com/base-org/leader-election/leader/config"
 	"github.com/base-org/leader-election/leader/flags"
 	"github.com/hashicorp/raft"
 	"github.com/urfave/cli"
@@ -41,7 +42,7 @@ func LeaderElectorMain(ctx *cli.Context) error {
 	return nil
 }
 
-func ReadConfig(ctx *cli.Context) (*leader.Config, error) {
+func ReadConfig(ctx *cli.Context) (*config.Config, error) {
 	if err := flags.CheckRequired(ctx); err != nil {
 		return nil, err
 	}
@@ -54,13 +55,15 @@ func ReadConfig(ctx *cli.Context) (*leader.Config, error) {
 		return nil, err
 	}
 
-	cfg := &leader.Config{
+	cfg := &config.Config{
 		RaftConfig:    rc,
 		ServerAddr:    ctx.String(flags.ServerAddr.Name),
 		StorageDir:    filepath.Join(ctx.String(flags.StorageDir.Name), ctx.String(flags.ServerID.Name)),
 		SnapshotLimit: ctx.Int(flags.SnapshotLimit.Name),
 		Bootstrap:     ctx.Bool(flags.Bootstrap.Name),
 		Port:          port,
+		NodeAddr:      ctx.String(flags.OpNodeAddr.Name),
+		BatcherAddr:   ctx.String(flags.OpBatcherAddr.Name),
 	}
 
 	return cfg, nil

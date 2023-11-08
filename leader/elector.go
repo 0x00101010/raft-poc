@@ -9,6 +9,7 @@ import (
 
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/Jille/raftadmin"
+	"github.com/base-org/leader-election/leader/config"
 	lh "github.com/base-org/leader-election/leader/health"
 	"github.com/hashicorp/raft"
 	boltdb "github.com/hashicorp/raft-boltdb"
@@ -21,7 +22,7 @@ import (
 )
 
 type Elector struct {
-	config        *Config
+	config        *config.Config
 	raft          *raft.Raft
 	logStore      raft.LogStore
 	stableStore   raft.StableStore
@@ -36,12 +37,12 @@ type Elector struct {
 	monitor lh.HealthMonitor
 }
 
-func NewElector(ctx context.Context, cfg *Config) (*Elector, error) {
+func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 	e := &Elector{
 		config:   cfg,
 		leader:   atomic.NewBool(false),
 		leaderCh: make(chan bool, 1),
-		monitor:  lh.NewSimpleHealthMonitor(),
+		monitor:  lh.NewSimpleHealthMonitor(cfg),
 	}
 
 	if err := e.makeRaft(ctx); err != nil {
@@ -129,8 +130,15 @@ func (e *Elector) monitorLeadership(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case state := <-e.leaderCh:
-			fmt.Println("leader election occured", state)
+		case leader := <-e.leaderCh:
+			fmt.Println("leader election occured", leader)
+			e.leader.Store(leader)
+
+			if leader {
+
+			} else {
+
+			}
 		}
 	}
 }

@@ -1,4 +1,4 @@
-package leader
+package config
 
 import "github.com/hashicorp/raft"
 
@@ -9,4 +9,7 @@ type Config struct {
 	StorageDir    string
 	SnapshotLimit int
 	Bootstrap     bool
+
+	NodeAddr    string
+	BatcherAddr string
 }

@@ -38,12 +38,26 @@ var (
 		Usage:  "Bootstrap the Raft cluster",
 		EnvVar: "BOOTSTRAP",
 	}
+
+	OpNodeAddr = &cli.StringFlag{
+		Name:   "op-node-addr",
+		Usage:  "The addr to bind to for the op-node service",
+		EnvVar: "OP_NODE_HEALTH_ADDR",
+	}
+
+	OpBatcherAddr = &cli.StringFlag{
+		Name:   "op-batcher-addr",
+		Usage:  "The port to bind to for the op-batcher service",
+		EnvVar: "OP_BATCHER_ADDR",
+	}
 )
 
 var requiredFlags = []cli.Flag{
 	ServerAddr,
 	ServerID,
 	StorageDir,
+	OpNodeAddr,
+	OpBatcherAddr,
 }
 
 var optionalFlags = []cli.Flag{
