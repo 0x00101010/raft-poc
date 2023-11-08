@@ -7,6 +7,7 @@ import (
 
 	"github.com/base-org/leader-election/leader/rpc"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 )
 
@@ -115,4 +116,30 @@ func (n *NodeRPCClient) LatestBlock() (common.Hash, error) {
 	}
 
 	return common.HexToHash(block.Hash), nil
+}
+
+type MockNodeRPC struct{}
+
+var _ NodeRPC = (*MockNodeRPC)(nil)
+
+func NewMockNodeRPC() NodeRPC {
+	return &MockNodeRPC{}
+}
+
+// LatestBlock implements NodeRPC.
+func (*MockNodeRPC) LatestBlock() (common.Hash, error) {
+	log.Info("MockNodeRPC: LatestBlock")
+	return common.Hash{}, nil
+}
+
+// StartSequencer implements NodeRPC.
+func (*MockNodeRPC) StartSequencer(hsh common.Hash) error {
+	log.Info("MockNodeRPC: StartSequencer")
+	return nil
+}
+
+// StopSequencer implements NodeRPC.
+func (*MockNodeRPC) StopSequencer() (common.Hash, error) {
+	log.Info("MockNodeRPC: StopSequencer")
+	return common.Hash{}, nil
 }

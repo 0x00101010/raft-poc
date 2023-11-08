@@ -1,6 +1,7 @@
 package health
 
 import (
+	"os"
 	"time"
 
 	"github.com/base-org/leader-election/leader/config"
@@ -42,6 +43,46 @@ func (m *SimpleHealthMonitor) notifyHealth() {
 		batcherHealthy, _ := m.batcherClient.Healthy()
 
 		healthy := nodeHealthy && batcherHealthy
+		for _, ch := range m.subscribers {
+			ch <- healthy
+		}
+
+		time.Sleep(2 * time.Second)
+	}
+}
+
+type MockHealthMonitor struct {
+	// Not healthy if file exists, this is used to mock node's health status.
+	healthFile  string
+	subscribers []chan bool
+}
+
+var _ HealthMonitor = (*MockHealthMonitor)(nil)
+
+func NewMockHealthMonitor(healthFile string) HealthMonitor {
+	m := &MockHealthMonitor{
+		healthFile:  healthFile,
+		subscribers: make([]chan bool, 0),
+	}
+
+	go m.notifyHealth()
+	return m
+}
+
+// Subscribe implements HealthMonitor.
+func (m *MockHealthMonitor) Subscribe() <-chan bool {
+	ch := make(chan bool)
+	m.subscribers = append(m.subscribers, ch)
+	return ch
+}
+
+func (m *MockHealthMonitor) notifyHealth() {
+	for {
+		healthy := true
+		if _, err := os.Stat(m.healthFile); !os.IsNotExist(err) {
+			healthy = false
+		}
+
 		for _, ch := range m.subscribers {
 			ch <- healthy
 		}

@@ -56,14 +56,16 @@ func ReadConfig(ctx *cli.Context) (*config.Config, error) {
 	}
 
 	cfg := &config.Config{
-		RaftConfig:    rc,
-		ServerAddr:    ctx.String(flags.ServerAddr.Name),
-		StorageDir:    filepath.Join(ctx.String(flags.StorageDir.Name), ctx.String(flags.ServerID.Name)),
-		SnapshotLimit: ctx.Int(flags.SnapshotLimit.Name),
-		Bootstrap:     ctx.Bool(flags.Bootstrap.Name),
-		Port:          port,
-		NodeAddr:      ctx.String(flags.OpNodeAddr.Name),
-		BatcherAddr:   ctx.String(flags.OpBatcherAddr.Name),
+		RaftConfig:      rc,
+		ServerAddr:      ctx.String(flags.ServerAddr.Name),
+		StorageDir:      filepath.Join(ctx.String(flags.StorageDir.Name), ctx.String(flags.ServerID.Name)),
+		SnapshotLimit:   ctx.Int(flags.SnapshotLimit.Name),
+		Bootstrap:       ctx.Bool(flags.Bootstrap.Name),
+		Port:            port,
+		NodeAddr:        ctx.String(flags.OpNodeAddr.Name),
+		BatcherAddr:     ctx.String(flags.OpBatcherAddr.Name),
+		Test:            ctx.Bool(flags.Test.Name),
+		HealthCheckPath: ctx.String(flags.HealthCheckPath.Name),
 	}
 
 	return cfg, nil

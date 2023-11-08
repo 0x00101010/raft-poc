@@ -44,14 +44,28 @@ type Elector struct {
 }
 
 func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
+	var batcherRPC control.BatcherRPC
+	var nodeRPC control.NodeRPC
+	var monitor lh.HealthMonitor
+	// Run mock clients if in test mode.
+	if cfg.Test {
+		batcherRPC = control.NewMockBatcherRPC()
+		nodeRPC = control.NewMockNodeRPC()
+		monitor = lh.NewMockHealthMonitor(cfg.HealthCheckPath)
+	} else {
+		batcherRPC = control.NewBatcherRPC(cfg.BatcherAddr)
+		nodeRPC = control.NewNodeRPC(cfg.NodeAddr)
+		monitor = lh.NewSimpleHealthMonitor(cfg)
+	}
+
 	e := &Elector{
 		log:        cfg.RaftConfig.Logger,
 		config:     cfg,
 		leader:     atomic.NewBool(false),
 		leaderCh:   make(chan bool, 1),
-		monitor:    lh.NewSimpleHealthMonitor(cfg),
-		batcherRPC: control.NewBatcherRPC(cfg.BatcherAddr),
-		nodeRPC:    control.NewNodeRPC(cfg.NodeAddr),
+		monitor:    monitor,
+		batcherRPC: batcherRPC,
+		nodeRPC:    nodeRPC,
 	}
 
 	if err := e.makeRaft(ctx); err != nil {

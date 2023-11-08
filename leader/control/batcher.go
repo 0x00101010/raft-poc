@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/base-org/leader-election/leader/rpc"
+	"github.com/ethereum/go-ethereum/log"
 	"github.com/pkg/errors"
 )
 
@@ -60,5 +61,25 @@ func (b *BatcherRPCClient) StopBatcher() error {
 		return errors.Wrap(err, "failed to send request")
 	}
 
+	return nil
+}
+
+type MockBatcherRPC struct{}
+
+var _ BatcherRPC = (*MockBatcherRPC)(nil)
+
+func NewMockBatcherRPC() BatcherRPC {
+	return &MockBatcherRPC{}
+}
+
+// StartBatcher implements BatcherRPC.
+func (m *MockBatcherRPC) StartBatcher() error {
+	log.Info("MockBatcherRPC: StartBatcher")
+	return nil
+}
+
+// StopBatcher implements BatcherRPC.
+func (m *MockBatcherRPC) StopBatcher() error {
+	log.Info("MockBatcherRPC: StopBatcher")
 	return nil
 }

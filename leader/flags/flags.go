@@ -50,19 +50,39 @@ var (
 		Usage:  "The port to bind to for the op-batcher service",
 		EnvVar: "OP_BATCHER_ADDR",
 	}
+
+	// ============================
+	// Test related flags
+	// ============================
+	Test = &cli.BoolFlag{
+		Name:   "test",
+		Usage:  "Run in test mode",
+		EnvVar: "TEST",
+	}
+
+	HealthCheckPath = &cli.StringFlag{
+		Name:   "health-check-path",
+		Usage:  "The file path to use for health checks",
+		EnvVar: "HEALTH_CHECK_PATH",
+	}
 )
 
 var requiredFlags = []cli.Flag{
 	ServerAddr,
 	ServerID,
 	StorageDir,
-	OpNodeAddr,
-	OpBatcherAddr,
 }
 
 var optionalFlags = []cli.Flag{
 	SnapshotLimit,
 	Bootstrap,
+	OpNodeAddr,
+	OpBatcherAddr,
+}
+
+var testFlags = []cli.Flag{
+	Test,
+	HealthCheckPath,
 }
 
 // Flags is the collection of flags used by the binary.
@@ -70,6 +90,7 @@ var Flags []cli.Flag
 
 func init() {
 	Flags = append(requiredFlags, optionalFlags...)
+	Flags = append(Flags, testFlags...)
 }
 
 func CheckRequired(ctx *cli.Context) error {
