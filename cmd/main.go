@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"net"
 	"os"
 	"path/filepath"
 
@@ -50,18 +49,12 @@ func ReadConfig(ctx *cli.Context) (*config.Config, error) {
 	rc := raft.DefaultConfig()
 	rc.LocalID = raft.ServerID(ctx.String(flags.ServerID.Name))
 
-	_, port, err := net.SplitHostPort(ctx.String(flags.ServerAddr.Name))
-	if err != nil {
-		return nil, err
-	}
-
 	cfg := &config.Config{
 		RaftConfig:      rc,
 		ServerAddr:      ctx.String(flags.ServerAddr.Name),
 		StorageDir:      filepath.Join(ctx.String(flags.StorageDir.Name), ctx.String(flags.ServerID.Name)),
 		SnapshotLimit:   ctx.Int(flags.SnapshotLimit.Name),
 		Bootstrap:       ctx.Bool(flags.Bootstrap.Name),
-		Port:            port,
 		NodeAddr:        ctx.String(flags.OpNodeAddr.Name),
 		BatcherAddr:     ctx.String(flags.OpBatcherAddr.Name),
 		Test:            ctx.Bool(flags.Test.Name),

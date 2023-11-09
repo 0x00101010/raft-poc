@@ -42,7 +42,7 @@ var (
 	OpNodeAddr = &cli.StringFlag{
 		Name:   "op-node-addr",
 		Usage:  "The addr to bind to for the op-node service",
-		EnvVar: "OP_NODE_HEALTH_ADDR",
+		EnvVar: "OP_NODE_ADDR",
 	}
 
 	OpBatcherAddr = &cli.StringFlag{
