@@ -33,7 +33,7 @@ type Elector struct {
 	snapshotStore raft.SnapshotStore
 	transport     raft.Transport
 	leader        *atomic.Bool
-	leaderCh      chan bool
+	leaderCh      <-chan bool
 
 	// TODO: clean up later when we switch off from raft-grpc-transport lib
 	tm *transport.Manager
@@ -62,7 +62,6 @@ func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 		log:        cfg.RaftConfig.Logger,
 		config:     cfg,
 		leader:     atomic.NewBool(false),
-		leaderCh:   make(chan bool, 1),
 		monitor:    monitor,
 		batcherRPC: batcherRPC,
 		nodeRPC:    nodeRPC,
@@ -127,6 +126,7 @@ func (e *Elector) makeRaft(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("raft.NewRaft: %v", err)
 	}
+	e.leaderCh = e.raft.LeaderCh()
 
 	if e.config.Bootstrap {
 		cfg := raft.Configuration{
@@ -183,10 +183,6 @@ func (e *Elector) monitorSequencerHealth(ctx context.Context) {
 		case healthy := <-healthUpdate:
 			fmt.Println("received health update", healthy)
 			if healthy {
-				continue
-			}
-
-			if !e.leader.Load() {
 				continue
 			}
 
