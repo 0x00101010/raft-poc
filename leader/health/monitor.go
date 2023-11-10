@@ -40,8 +40,15 @@ func (m *SimpleHealthMonitor) Subscribe() <-chan bool {
 
 func (m *SimpleHealthMonitor) notifyHealth() {
 	for {
-		nodeHealthy, _ := m.nodeClient.Healthy()
-		batcherHealthy, _ := m.batcherClient.Healthy()
+		nodeHealthy, err := m.nodeClient.Healthy()
+		if err != nil {
+			fmt.Println("node client error", err)
+		}
+
+		batcherHealthy, err := m.batcherClient.Healthy()
+		if err != nil {
+			fmt.Println("batcher client error", err)
+		}
 
 		healthy := nodeHealthy && batcherHealthy
 		for _, ch := range m.subscribers {
