@@ -98,7 +98,7 @@ func (e *Elector) makeRaft(ctx context.Context) error {
 	log := e.config.RaftConfig.Logger
 
 	if _, err := os.Stat(e.config.StorageDir); os.IsNotExist(err) {
-		if err := os.Mkdir(e.config.StorageDir, 0755); err != nil {
+		if err := os.MkdirAll(e.config.StorageDir, 0755); err != nil {
 			return fmt.Errorf("error creating storage dir: %v", err)
 		}
 	}
