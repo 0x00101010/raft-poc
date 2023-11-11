@@ -64,7 +64,9 @@ func (n *NodeRPCClient) StartSequencer(hsh common.Hash) error {
 	}
 
 	fmt.Println(r.Result)
-	fmt.Println(r.Error.Error())
+	if r.Error != nil {
+		fmt.Println(r.Error.Error())
+	}
 
 	fmt.Println("Sequencer started...")
 
