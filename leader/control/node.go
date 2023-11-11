@@ -2,6 +2,7 @@ package control
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -49,6 +50,8 @@ func (n *NodeRPCClient) StartSequencer(hsh common.Hash) error {
 		return errors.Wrap(err, "failed to send request")
 	}
 
+	fmt.Println("Sequencer started...")
+
 	return nil
 }
 
@@ -73,12 +76,18 @@ func (n *NodeRPCClient) StopSequencer() (common.Hash, error) {
 	}
 
 	// TODO: place holder, need to change to correct unmarshalling code.
-	var result common.Hash
-	if err := json.Unmarshal(bytes, &result); err != nil {
+	var r rpc.JSONRPCResponse
+	if err := json.Unmarshal(bytes, &r); err != nil {
 		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
 	}
 
-	return result, nil
+	hsh, ok := r.Result.(string)
+	if !ok {
+		fmt.Println("failed to convert result to hash string")
+	}
+	fmt.Printf("Sequencer stopped at %s\n", hsh)
+
+	return common.HexToHash(hsh), nil
 }
 
 // LatestBlock implements NodeRPC.

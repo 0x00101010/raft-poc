@@ -1,6 +1,7 @@
 package control
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/base-org/leader-election/leader/rpc"
@@ -45,6 +46,8 @@ func (b *BatcherRPCClient) StartBatcher() error {
 		return errors.Wrap(err, "failed to send request")
 	}
 
+	fmt.Println("Batcher started...")
+
 	return nil
 }
 
@@ -60,6 +63,8 @@ func (b *BatcherRPCClient) StopBatcher() error {
 	if _, err := rpc.Post(b.client, b.serverAddr, req); err != nil {
 		return errors.Wrap(err, "failed to send request")
 	}
+
+	fmt.Println("Batcher stopped...")
 
 	return nil
 }

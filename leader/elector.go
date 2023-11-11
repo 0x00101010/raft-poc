@@ -163,11 +163,13 @@ func (e *Elector) monitorLeadership(ctx context.Context) {
 
 			// TODO: handle error situation
 			if leader {
+				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
 				// Start sequencer when changing to leader
 				current, _ := e.nodeRPC.LatestBlock()
 				e.nodeRPC.StartSequencer(current)
 				e.batcherRPC.StartBatcher()
 			} else {
+				fmt.Printf("Stopping sequencer at %s\n", e.config.ServerAddr)
 				// Stop sequencer when stepping down from leader
 				e.batcherRPC.StopBatcher()
 				e.nodeRPC.StopSequencer()
