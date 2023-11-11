@@ -169,7 +169,10 @@ func (e *Elector) run(ctx context.Context) {
 			if leader {
 				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
 				// Start sequencer when changing to leader
-				current, _ := e.nodeRPC.LatestBlock()
+				current, err := e.nodeRPC.LatestBlock()
+				if err != nil {
+					fmt.Println(err)
+				}
 				e.nodeRPC.StartSequencer(current)
 				e.batcherRPC.StartBatcher()
 			} else {
@@ -199,7 +202,10 @@ func (e *Elector) run(ctx context.Context) {
 			if leader && !seqActive {
 				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
 				// Start sequencer when changing to leader
-				current, _ := e.nodeRPC.LatestBlock()
+				current, err := e.nodeRPC.LatestBlock()
+				if err != nil {
+					fmt.Println(err)
+				}
 				e.nodeRPC.StartSequencer(current)
 				e.batcherRPC.StartBatcher()
 			} else if !leader && seqActive {

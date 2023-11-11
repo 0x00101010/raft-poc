@@ -122,6 +122,7 @@ func (n *NodeRPCClient) LatestBlock() (common.Hash, error) {
 	}
 
 	bytes, err := io.ReadAll(resp.Body)
+	fmt.Println(string(bytes))
 	if err != nil {
 		return common.Hash{}, errors.Wrap(err, "failed to read response body")
 	}
@@ -130,6 +131,7 @@ func (n *NodeRPCClient) LatestBlock() (common.Hash, error) {
 	if err := json.Unmarshal(bytes, &result); err != nil {
 		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
 	}
+	fmt.Println(result)
 
 	blockData, ok := result.Result.([]byte)
 	if !ok {

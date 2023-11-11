@@ -44,25 +44,25 @@ func (j JSONRPCError) Error() string {
 
 // Block represents the Ethereum block JSON structure returned by eth_getBlockByX.
 type Block struct {
-	Number           string   `json:"number"`
-	Hash             string   `json:"hash"`
-	ParentHash       string   `json:"parentHash"`
-	Nonce            string   `json:"nonce"`
-	Sha3Uncles       string   `json:"sha3Uncles"`
-	LogsBloom        string   `json:"logsBloom"`
-	TransactionsRoot string   `json:"transactionsRoot"`
-	StateRoot        string   `json:"stateRoot"`
-	ReceiptsRoot     string   `json:"receiptsRoot"`
-	Miner            string   `json:"miner"`
-	Difficulty       string   `json:"difficulty"`
-	TotalDifficulty  string   `json:"totalDifficulty"`
-	ExtraData        string   `json:"extraData"`
-	Size             string   `json:"size"`
-	GasLimit         string   `json:"gasLimit"`
-	GasUsed          string   `json:"gasUsed"`
-	Timestamp        string   `json:"timestamp"`
-	Transactions     []any    `json:"transactions"`
-	Uncles           []string `json:"uncles"`
+	// Number           string   `json:"number"`
+	Hash string `json:"hash"`
+	// ParentHash       string   `json:"parentHash"`
+	// Nonce            string   `json:"nonce"`
+	// Sha3Uncles       string   `json:"sha3Uncles"`
+	// LogsBloom        string   `json:"logsBloom"`
+	// TransactionsRoot string   `json:"transactionsRoot"`
+	// StateRoot        string   `json:"stateRoot"`
+	// ReceiptsRoot     string   `json:"receiptsRoot"`
+	// Miner            string   `json:"miner"`
+	// Difficulty       string   `json:"difficulty"`
+	// TotalDifficulty  string   `json:"totalDifficulty"`
+	// ExtraData        string   `json:"extraData"`
+	// Size             string   `json:"size"`
+	// GasLimit         string   `json:"gasLimit"`
+	// GasUsed          string   `json:"gasUsed"`
+	// Timestamp        string   `json:"timestamp"`
+	// Transactions     []any    `json:"transactions"`
+	// Uncles           []string `json:"uncles"`
 }
 
 func Post(c *http.Client, url string, req JSONRPCRequest) (*http.Response, error) {
