@@ -56,13 +56,13 @@ func (g *GethRPCClient) LatestBlock() (common.Hash, error) {
 	}
 	fmt.Println(result)
 
-	blockData, ok := result.Result.([]byte)
+	blockResult, ok := result.Result.(string)
 	if !ok {
 		return common.Hash{}, errors.New("failed to convert result to bytes")
 	}
 
 	var block rpc.Block
-	if err := json.Unmarshal(blockData, &block); err != nil {
+	if err := json.Unmarshal([]byte(blockResult), &block); err != nil {
 		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
 	}
 
