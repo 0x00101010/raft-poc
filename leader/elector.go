@@ -85,7 +85,11 @@ func (e *Elector) Run(ctx context.Context) {
 	hs := health.NewServer()
 	grpc_health_v1.RegisterHealthServer(s, hs)
 
-	sock, err := net.Listen("tcp", e.config.ServerAddr)
+	_, port, err := net.SplitHostPort(e.config.ServerAddr)
+	if err != nil {
+		log.Fatalf("failed to split host port: %v", err)
+	}
+	sock, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
