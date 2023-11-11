@@ -80,6 +80,7 @@ func Post(c *http.Client, url string, req JSONRPCRequest) (*http.Response, error
 	if err != nil {
 		return nil, err
 	}
+	httpReq.Header.Set("Content-Type", ContentTypeApplicationJSON)
 
 	resp, err := c.Do(httpReq)
 	if err != nil {
