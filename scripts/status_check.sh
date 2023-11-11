@@ -1,11 +1,8 @@
 #!/bin/sh
 
-NODE_ADDR=http://node
-SERVER_ADDR=http://localhost
-
 sequencer_active() {
     curl -s \
-        --location $NODE_ADDR:8545 \
+        --location http://node:8545 \
         --header 'Content-Type: application/json' \
         --data '{
         "jsonrpc":"2.0",
@@ -18,7 +15,7 @@ sequencer_active() {
 }
 
 raft_leader() {
-    raftadmin $SERVER_ADDR:50050 leader
+    raftadmin localhost:50050 leader
 }
 
 echo "Node status:"
