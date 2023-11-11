@@ -129,6 +129,7 @@ func (n *NodeRPCClient) SequencerActive() (bool, error) {
 
 	var r rpc.JSONRPCResponse
 	if err := json.Unmarshal(bytes, &r); err != nil {
+		fmt.Println(string(bytes))
 		return false, errors.Wrap(err, "failed to unmarshal response body")
 	}
 
