@@ -46,10 +46,12 @@ func (c *Client) Healthy() (bool, error) {
 	}
 
 	url := fmt.Sprintf("%s/healthz", c.serverAddr)
-	_, err = c.client.Post(url, ContentTypeApplicationJSON, bytes.NewBuffer(data))
+	resp, err := c.client.Post(url, ContentTypeApplicationJSON, bytes.NewBuffer(data))
 	if err != nil {
 		return false, err
 	}
+
+	fmt.Printf("%s response code is %d\n", c.serverAddr, resp.StatusCode)
 
 	return true, nil
 }
