@@ -1,12 +1,11 @@
 #!/bin/sh
 
-NodeA=base-sepolia-devnet-sequencer-donotuse.cbhq.net:50050
-NodeB=10.242.49.206:50050
-NodeC=10.242.176.235:50050
+NODE_ADDR=http://node
+SERVER_ADDR=http://localhost
 
 sequencer_active() {
     curl -s \
-        --location $1 \
+        --location $NODE_ADDR:8545 \
         --header 'Content-Type: application/json' \
         --data '{
         "jsonrpc":"2.0",
@@ -19,19 +18,9 @@ sequencer_active() {
 }
 
 raft_leader() {
-    raftadmin $1 leader
+    raftadmin $SERVER_ADDR:50050 leader
 }
 
-echo "NodeA status:"
-echo "sequencer active: $(sequencer_active $NodeA)"
-echo "raft leader: $(raft_leader $NodeA)"
-
-echo ""
-echo "NodeB status:"
-echo "NodeB sequencer active: $(sequencer_active $NodeB)"
-echo "raft leader: $(raft_leader $NodeB)"
-
-echo ""
-echo "NodeC status:"
-echo "NodeC sequencer active: $(sequencer_active $NodeC)"
-echo "raft leader: $(raft_leader $NodeC)"
+echo "Node status:"
+echo "sequencer active: $(sequencer_active)"
+echo "raft leader: $(raft_leader)"
