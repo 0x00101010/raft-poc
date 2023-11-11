@@ -84,6 +84,7 @@ var optionalFlags = []cli.Flag{
 	Bootstrap,
 	OpNodeAddr,
 	OpBatcherAddr,
+	OpGethAddr,
 }
 
 var testFlags = []cli.Flag{
