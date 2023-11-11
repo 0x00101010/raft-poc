@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -48,6 +49,8 @@ func ReadConfig(ctx *cli.Context) (*config.Config, error) {
 
 	rc := raft.DefaultConfig()
 	rc.LocalID = raft.ServerID(ctx.String(flags.ServerID.Name))
+
+	fmt.Printf("GethAddr is: %s", ctx.String(flags.OpGethAddr.Name))
 
 	cfg := &config.Config{
 		RaftConfig:      rc,
