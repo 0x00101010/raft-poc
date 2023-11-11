@@ -40,6 +40,8 @@ func NewNodeRPC(serverAddr string) NodeRPC {
 
 // StartSequencer implements INodeAdmin.
 func (n *NodeRPCClient) StartSequencer(hsh common.Hash) error {
+	fmt.Printf("Starting sequencer at %s", hsh.String())
+
 	req := rpc.JSONRPCRequest{
 		Version: rpc.DefaultJsonRPCVersion,
 		Method:  StartSequencerMethod,
@@ -47,9 +49,23 @@ func (n *NodeRPCClient) StartSequencer(hsh common.Hash) error {
 		ID:      0,
 	}
 
-	if _, err := rpc.Post(n.client, n.serverAddr, req); err != nil {
+	resp, err := rpc.Post(n.client, n.serverAddr, req)
+	if err != nil {
 		return errors.Wrap(err, "failed to send request")
 	}
+
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return errors.Wrap(err, "failed to read response body")
+	}
+
+	var r rpc.JSONRPCResponse
+	if err := json.Unmarshal(bytes, &r); err != nil {
+		return errors.Wrap(err, "failed to unmarshal response body")
+	}
+
+	fmt.Println(r.Result)
+	fmt.Println(r.Error.Error())
 
 	fmt.Println("Sequencer started...")
 
