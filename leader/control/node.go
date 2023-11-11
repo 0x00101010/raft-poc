@@ -21,6 +21,7 @@ type NodeRPC interface {
 	StartSequencer(hsh common.Hash) error
 	StopSequencer() (common.Hash, error)
 	LatestBlock() (common.Hash, error)
+	SequencerActive() (bool, error)
 }
 
 type NodeRPCClient struct {
@@ -127,6 +128,38 @@ func (n *NodeRPCClient) LatestBlock() (common.Hash, error) {
 	return common.HexToHash(block.Hash), nil
 }
 
+// SequencerActive implements NodeRPC.
+func (n *NodeRPCClient) SequencerActive() (bool, error) {
+	req := rpc.JSONRPCRequest{
+		Version: rpc.DefaultJsonRPCVersion,
+		Method:  "admin_sequencerActive",
+		Params:  []any{},
+		ID:      0,
+	}
+
+	resp, err := rpc.Post(n.client, n.serverAddr, req)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to send request")
+	}
+
+	bytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return false, errors.Wrap(err, "failed to read response body")
+	}
+
+	var r rpc.JSONRPCResponse
+	if err := json.Unmarshal(bytes, &r); err != nil {
+		return false, errors.Wrap(err, "failed to unmarshal response body")
+	}
+
+	active, ok := r.Result.(bool)
+	if !ok {
+		return false, errors.New("failed to convert result to bool")
+	}
+
+	return active, nil
+}
+
 type MockNodeRPC struct{}
 
 var _ NodeRPC = (*MockNodeRPC)(nil)
@@ -151,4 +184,10 @@ func (*MockNodeRPC) StartSequencer(hsh common.Hash) error {
 func (*MockNodeRPC) StopSequencer() (common.Hash, error) {
 	log.Info("MockNodeRPC: StopSequencer")
 	return common.Hash{}, nil
+}
+
+// SequencerActive implements NodeRPC.
+func (*MockNodeRPC) SequencerActive() (bool, error) {
+	log.Info("MockNodeRPC: SequencerActive")
+	return true, nil
 }

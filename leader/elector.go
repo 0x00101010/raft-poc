@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"time"
 
 	transport "github.com/Jille/raft-grpc-transport"
 	"github.com/Jille/raftadmin"
@@ -75,8 +76,9 @@ func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 }
 
 func (e *Elector) Run(ctx context.Context) {
-	go e.monitorLeadership(ctx)
-	go e.monitorSequencerHealth(ctx)
+	// go e.monitorLeadership(ctx)
+	// go e.monitorSequencerHealth(ctx)
+	go e.run(ctx)
 
 	s := grpc.NewServer()
 	e.tm.Register(s)
@@ -150,6 +152,79 @@ func (e *Elector) makeRaft(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (e *Elector) run(ctx context.Context) {
+	healthCh := e.monitor.Subscribe()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case leader := <-e.leaderCh:
+			// Handle leadership change
+			fmt.Printf("leader election occured, leader status is now: %t\n", leader)
+			e.leader.Store(leader)
+
+			if leader {
+				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
+				// Start sequencer when changing to leader
+				current, _ := e.nodeRPC.LatestBlock()
+				e.nodeRPC.StartSequencer(current)
+				e.batcherRPC.StartBatcher()
+			} else {
+				fmt.Printf("Stopping sequencer at %s\n", e.config.ServerAddr)
+				// Stop sequencer when stepping down from leader
+				e.batcherRPC.StopBatcher()
+				e.nodeRPC.StopSequencer()
+			}
+		case healthy := <-healthCh:
+			fmt.Println("received health update", healthy)
+			if healthy {
+				continue
+			}
+
+			// TODO: make it more robust, handle error better
+			fmt.Println("sequencer is unhealthy, trying to transfer leadership to another node")
+			if err := e.raft.LeadershipTransfer().Error(); err != nil {
+				fmt.Println("failed to transfer leadership", err)
+			}
+		default:
+			leader := e.leader.Load()
+			seqActive, err := e.nodeRPC.SequencerActive()
+			if err != nil {
+				fmt.Println("failed to get sequencer status", err)
+			}
+
+			if leader && !seqActive {
+				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
+				// Start sequencer when changing to leader
+				current, _ := e.nodeRPC.LatestBlock()
+				e.nodeRPC.StartSequencer(current)
+				e.batcherRPC.StartBatcher()
+			} else if !leader && seqActive {
+				fmt.Printf("Stopping sequencer at %s\n", e.config.ServerAddr)
+				// Stop sequencer when stepping down from leader
+				e.batcherRPC.StopBatcher()
+				e.nodeRPC.StopSequencer()
+			} else {
+				// do nothing...
+				fmt.Println("sequencer in correct state")
+			}
+
+			time.Sleep(1 * time.Second)
+			// // need to add locks to avoid race condition here.
+			// if e.leader.Load() {
+
+			// } else {
+			// 	fmt.Printf("Stopping sequencer at %s\n", e.config.ServerAddr)
+			// 	// Stop sequencer when stepping down from leader
+			// 	e.batcherRPC.StopBatcher()
+			// 	e.nodeRPC.StopSequencer()
+			// }
+		}
+
+	}
 }
 
 func (e *Elector) monitorLeadership(ctx context.Context) {

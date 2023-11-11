@@ -15,8 +15,8 @@ services:
       - SERVER_ID=NodeA
       - STORAGE_DIR=/raft-cluster
       - BOOTSTRAP=false
-      # - TEST=true
-      # - HEALTH_CHECK_PATH=/raft-cluster/health/NodeA
+      - TEST=true
+      - HEALTH_CHECK_PATH=/raft-cluster/health/NodeA
       # - OP_NODE_ADDR=http://node:8545
       # - OP_BATCHER_ADDR=http://batcher:8545
 
