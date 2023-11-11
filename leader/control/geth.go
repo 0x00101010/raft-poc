@@ -23,6 +23,7 @@ type GethRPCClient struct {
 var _ GethRPC = (*GethRPCClient)(nil)
 
 func NewGethRPC(serverAddr string) GethRPC {
+	fmt.Printf("NewGethRPC: %s\n", serverAddr)
 	return &GethRPCClient{
 		serverAddr: serverAddr,
 		client:     &http.Client{},
