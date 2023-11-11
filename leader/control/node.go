@@ -20,7 +20,6 @@ const (
 type NodeRPC interface {
 	StartSequencer(hsh common.Hash) error
 	StopSequencer() (common.Hash, error)
-	LatestBlock() (common.Hash, error)
 	SequencerActive() (bool, error)
 }
 
@@ -107,45 +106,6 @@ func (n *NodeRPCClient) StopSequencer() (common.Hash, error) {
 	return common.HexToHash(hsh), nil
 }
 
-// LatestBlock implements NodeRPC.
-func (n *NodeRPCClient) LatestBlock() (common.Hash, error) {
-	req := rpc.JSONRPCRequest{
-		Version: rpc.DefaultJsonRPCVersion,
-		Method:  "eth_getBlockByNumber",
-		Params:  []any{"latest", true},
-		ID:      0,
-	}
-
-	resp, err := rpc.Post(n.client, n.serverAddr, req)
-	if err != nil {
-		return common.Hash{}, errors.Wrap(err, "failed to send request")
-	}
-
-	bytes, err := io.ReadAll(resp.Body)
-	fmt.Println(string(bytes))
-	if err != nil {
-		return common.Hash{}, errors.Wrap(err, "failed to read response body")
-	}
-
-	var result rpc.JSONRPCResponse
-	if err := json.Unmarshal(bytes, &result); err != nil {
-		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
-	}
-	fmt.Println(result)
-
-	blockData, ok := result.Result.([]byte)
-	if !ok {
-		return common.Hash{}, errors.New("failed to convert result to bytes")
-	}
-
-	var block rpc.Block
-	if err := json.Unmarshal(blockData, &block); err != nil {
-		return common.Hash{}, errors.Wrap(err, "failed to unmarshal response body")
-	}
-
-	return common.HexToHash(block.Hash), nil
-}
-
 // SequencerActive implements NodeRPC.
 func (n *NodeRPCClient) SequencerActive() (bool, error) {
 	req := rpc.JSONRPCRequest{
@@ -184,12 +144,6 @@ var _ NodeRPC = (*MockNodeRPC)(nil)
 
 func NewMockNodeRPC() NodeRPC {
 	return &MockNodeRPC{}
-}
-
-// LatestBlock implements NodeRPC.
-func (*MockNodeRPC) LatestBlock() (common.Hash, error) {
-	log.Info("MockNodeRPC: LatestBlock")
-	return common.Hash{}, nil
 }
 
 // StartSequencer implements NodeRPC.

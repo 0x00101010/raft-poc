@@ -42,20 +42,24 @@ type Elector struct {
 	monitor    lh.HealthMonitor
 	batcherRPC control.BatcherRPC
 	nodeRPC    control.NodeRPC
+	gethRPC    control.GethRPC
 }
 
 func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 	var batcherRPC control.BatcherRPC
 	var nodeRPC control.NodeRPC
+	var gethRPC control.GethRPC
 	var monitor lh.HealthMonitor
 	// Run mock clients if in test mode.
 	if cfg.Test {
 		batcherRPC = control.NewMockBatcherRPC()
 		nodeRPC = control.NewMockNodeRPC()
+		gethRPC = control.NewMockGethRPC()
 		monitor = lh.NewMockHealthMonitor(cfg.HealthCheckPath)
 	} else {
 		batcherRPC = control.NewBatcherRPC(cfg.BatcherAddr)
 		nodeRPC = control.NewNodeRPC(cfg.NodeAddr)
+		gethRPC = control.NewGethRPC(cfg.GethAddr)
 		monitor = lh.NewSimpleHealthMonitor(cfg)
 	}
 
@@ -66,6 +70,7 @@ func NewElector(ctx context.Context, cfg *config.Config) (*Elector, error) {
 		monitor:    monitor,
 		batcherRPC: batcherRPC,
 		nodeRPC:    nodeRPC,
+		gethRPC:    gethRPC,
 	}
 
 	if err := e.makeRaft(ctx); err != nil {
@@ -169,7 +174,7 @@ func (e *Elector) run(ctx context.Context) {
 			if leader {
 				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
 				// Start sequencer when changing to leader
-				current, err := e.nodeRPC.LatestBlock()
+				current, err := e.gethRPC.LatestBlock()
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -202,7 +207,7 @@ func (e *Elector) run(ctx context.Context) {
 			if leader && !seqActive {
 				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
 				// Start sequencer when changing to leader
-				current, err := e.nodeRPC.LatestBlock()
+				current, err := e.gethRPC.LatestBlock()
 				if err != nil {
 					fmt.Println(err)
 				}
@@ -246,7 +251,7 @@ func (e *Elector) monitorLeadership(ctx context.Context) {
 			if leader {
 				fmt.Printf("Starting sequencer at %s\n", e.config.ServerAddr)
 				// Start sequencer when changing to leader
-				current, _ := e.nodeRPC.LatestBlock()
+				current, _ := e.gethRPC.LatestBlock()
 				e.nodeRPC.StartSequencer(current)
 				e.batcherRPC.StartBatcher()
 			} else {

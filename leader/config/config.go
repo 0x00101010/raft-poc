@@ -12,6 +12,7 @@ type Config struct {
 
 	NodeAddr    string
 	BatcherAddr string
+	GethAddr    string
 
 	Test            bool
 	HealthCheckPath string

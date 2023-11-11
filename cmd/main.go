@@ -57,6 +57,7 @@ func ReadConfig(ctx *cli.Context) (*config.Config, error) {
 		Bootstrap:       ctx.Bool(flags.Bootstrap.Name),
 		NodeAddr:        ctx.String(flags.OpNodeAddr.Name),
 		BatcherAddr:     ctx.String(flags.OpBatcherAddr.Name),
+		GethAddr:        ctx.String(flags.OpGethAddr.Name),
 		Test:            ctx.Bool(flags.Test.Name),
 		HealthCheckPath: ctx.String(flags.HealthCheckPath.Name),
 	}

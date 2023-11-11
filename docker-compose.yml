@@ -19,6 +19,7 @@ services:
       - HEALTH_CHECK_PATH=/raft-cluster/health/NodeA
       # - OP_NODE_ADDR=http://node:8545
       # - OP_BATCHER_ADDR=http://batcher:8545
+      # - OP_GETH_ADDR=http://geth:8545
 
   elector2:
     build:

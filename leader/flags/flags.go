@@ -51,6 +51,12 @@ var (
 		EnvVar: "OP_BATCHER_ADDR",
 	}
 
+	OpGethAddr = &cli.StringFlag{
+		Name:   "op-geth-addr",
+		Usage:  "The port to bind to for the op-geth service",
+		EnvVar: "OP_GETH_ADDR",
+	}
+
 	// ============================
 	// Test related flags
 	// ============================
