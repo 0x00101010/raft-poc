@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/pkg/errors"
+	"golang.org/x/net/context"
 )
 
 const (
@@ -71,7 +73,15 @@ func Post(c *http.Client, url string, req JSONRPCRequest) (*http.Response, error
 		return nil, errors.Wrap(err, "failed to marshal json request")
 	}
 
-	resp, err := c.Post(url, ContentTypeApplicationJSON, bytes.NewBuffer(data))
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.Do(httpReq)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to send request")
 	}

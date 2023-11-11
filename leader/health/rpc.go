@@ -1,24 +1,13 @@
 package health
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/base-org/leader-election/leader/rpc"
 )
 
 const ContentTypeApplicationJSON = "application/json"
-
-type JsonRPCRequest struct {
-	Version string `json:"jsonrpc"`
-	Method  string `json:"method"`
-	Params  []any  `json:"params"`
-	Id      int    `json:"id"`
-}
-
-type HealthzResponse struct {
-	Version string `json:"version"`
-}
 
 type Client struct {
 	serverAddr string
@@ -33,20 +22,14 @@ func NewClient(serverAddr string) *Client {
 }
 
 func (c *Client) Healthy() (bool, error) {
-	hq := JsonRPCRequest{
+	req := rpc.JSONRPCRequest{
 		Version: "2.0",
 		Method:  "",
 		Params:  []any{},
-		Id:      0,
+		ID:      0,
 	}
 
-	data, err := json.Marshal(hq)
-	if err != nil {
-		return false, err
-	}
-
-	url := fmt.Sprintf("%s/healthz", c.serverAddr)
-	resp, err := c.client.Post(url, ContentTypeApplicationJSON, bytes.NewBuffer(data))
+	resp, err := rpc.Post(c.client, fmt.Sprintf("%s/healthz", c.serverAddr), req)
 	if err != nil {
 		return false, err
 	}
